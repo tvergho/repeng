@@ -6,7 +6,7 @@ import gguf
 import numpy as np
 from sklearn.decomposition import PCA
 import torch
-from transformers import PreTrainedModel, PreTrainedTokenizerBase
+from transformers import PreTrainedModel, PreTrainedTokenizerBase, GenerationConfig
 import tqdm
 
 from .control import ControlModel, model_layer_list
@@ -127,7 +127,7 @@ def read_representations(
     """
 
     if not hidden_layers:
-        hidden_layers = range(-1, -model.config.num_hidden_layers, -1)
+        hidden_layers = range(-1, -model.config.decoder.num_hidden_layers, -1)
 
     # normalize the layer indexes if they're negative
     n_layers = len(model_layer_list(model))
@@ -205,9 +205,9 @@ def batched_get_hiddens(
     hidden_states = {layer: [] for layer in hidden_layers}
     with torch.no_grad():
         for batch in tqdm.tqdm(batched_inputs):
-            out = model(
-                **tokenizer(batch, padding=True, return_tensors="pt").to(model.device),
-                output_hidden_states=True,
+            out = model.generate(
+                **tokenizer(text=batch, padding=True, return_tensors="pt").to(model.device),
+                generation_config=GenerationConfig.from_pretrained("facebook/musicgen-small", output_hidden_states=True),
             )
             for layer in hidden_layers:
                 # if not indexing from end, account for embedding hiddens

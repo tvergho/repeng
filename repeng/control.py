@@ -207,5 +207,7 @@ def model_layer_list(model: ControlModel | PreTrainedModel) -> torch.nn.ModuleLi
         return model.model.layers
     elif hasattr(model, "transformer"):  # gpt-2-like
         return model.transformer.h
+    elif hasattr(model, "decoder"):
+        return model.decoder.model.decoder.layers
     else:
         raise ValueError(f"don't know how to get layer list for {type(model)}")
